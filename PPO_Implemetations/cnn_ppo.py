@@ -1,6 +1,6 @@
 """
 credit to https://github.com/ericyangyu/PPO-for-Beginners/tree/master
-This file adjusts the above code to support discrete action spaces and any observation data type (ie. not just tensors)
+This file adjusts the above code to support discrete action spaces.
 """
 
 import time
@@ -37,8 +37,6 @@ class PPO:
         # Extract environment information
         self.env = env
         
-
-
         # Initialize actor and critic networks
         self.actor = policy_class(env.world_size, env.obs_channels, env.act_dim)                                  # ALG STEP 1
         self.critic = policy_class(env.world_size, env.obs_channels, 1)

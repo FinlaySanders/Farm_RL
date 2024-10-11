@@ -142,8 +142,7 @@ class World_Generator:
         return within_bounds
 
 
-
 if __name__ == "__main__":
     gen = World_Generator(size=20)
     world = gen.generate_world(n_fields=2, field_size=1)
-    print(len(world["walkable"]))
+    print(world)

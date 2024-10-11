@@ -109,15 +109,15 @@ class Game:
             else:
                 self.display.blit(game.textures["water"], (pos[1] * self.tile_size, pos[0] * self.tile_size))
         
-        for pos in self.env.waypoints.tolist():
+        for pos in self.env.crops.tolist():
             self.display.blit(game.textures["tilled_dirt"], (pos[1] * self.tile_size, pos[0] * self.tile_size))
 
         for pos in self.env.render_info["bridge"].tolist():
             self.display.blit(game.textures["bridge"], (pos[1] * self.tile_size, pos[0] * self.tile_size))
 
-        for i in range(len(self.env.waypoints)):
-            pos = self.env.waypoints.tolist()[i]
-            progress = 1 - (self.env.harvestable_steps_remaining[i] / 30)
+        for i in range(len(self.env.crops)):
+            pos = self.env.crops.tolist()[i]
+            progress = 1 - (self.env.crop_growth_steps_remaining[i] / self.env.crop_growth_steps)
             boundaries = 1 / len(self.textures["wheat_sprites"])
 
             idx = int(progress // boundaries)
