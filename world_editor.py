@@ -22,10 +22,28 @@ obstacle_grid = np.array([
     [W,W,W,W,W,W,W,W,W,W],
 ])
 
+large_obstacle_grid = np.array([
+    [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W],
+    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
+    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
+    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
+    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
+    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
+    [W,W,0,0,0,0,0,B,0,0,0,0,0,0,0,W],
+    [W,W,W,W,W,W,W,B,W,W,W,W,W,0,0,W],
+    [W,W,W,W,W,W,W,B,W,W,W,W,W,W,0,W],
+    [W,W,W,0,0,0,0,B,0,0,0,0,W,W,W,W],
+    [W,W,0,0,0,0,0,0,0,0,0,0,W,W,W,W],
+    [W,0,0,0,0,W,0,0,0,0,0,0,0,W,W,W],
+    [W,0,0,0,0,W,0,0,0,0,W,W,0,0,0,W],
+    [W,0,0,0,0,W,W,0,0,0,W,W,0,0,0,W],
+    [W,0,0,0,W,W,W,0,0,0,0,0,0,0,0,W],
+    [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W],
+])
+
 class World_Generator:
-    def __init__(self, size):
-        self.world = np.array(obstacle_grid)
-        self.world_size = size
+    def __init__(self, world_size):
+        self.world_size = world_size
         self.dirs = np.array([[0,1], [1,0], [-1,0], [0,-1]], dtype=np.int32)
 
         self.EMPTY = 0
@@ -34,6 +52,8 @@ class World_Generator:
         self.OBSTACLE = 3
 
     def generate_world(self, n_fields, field_size):
+        self.world = np.array(obstacle_grid)
+
         walkable = np.argwhere((self.world == EMPTY) | (self.world == BRIDGE) | (self.world == CROP) | (self.world == self.PLAYER))
 
         water = np.argwhere(self.world == WATER)
@@ -143,6 +163,8 @@ class World_Generator:
 
 
 if __name__ == "__main__":
-    gen = World_Generator(size=20)
-    world = gen.generate_world(n_fields=2, field_size=1)
+    gen = World_Generator(size=16)
+    world = gen.generate_world(n_fields=10, field_size=5)
     print(world)
+    print(gen.world)
+    print(gen.world.shape)

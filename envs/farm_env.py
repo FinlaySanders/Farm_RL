@@ -1,18 +1,17 @@
 import numpy as np 
 import torch
 
-from world_editor import World_Generator
-
 class Farm_Env:
     dirs = np.array([[0,1],[1,0],[-1,0],[0,-1]], dtype=np.int32)
 
-    def __init__(self, size):
-        self.world_size = size
+    def __init__(self, world_size, world_generator):
+        self.world_size = world_size
+        self.world_generator = world_generator
         self.obs_channels = 3
         self.act_dim = 5
 
     def reset(self): 
-        self.world = World_Generator(size=self.world_size).generate_world(n_fields=3, field_size=3)
+        self.world = self.world_generator.generate_world(n_fields=3, field_size=3)
         self.render_info = self.world["render"]
 
         self.crops = np.array(self.world["crops"])

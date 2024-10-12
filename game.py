@@ -9,22 +9,25 @@ from policynets import CNNPolicyNetwork
 from envs.farm_env import Farm_Env
 from torch.distributions import Categorical
 
-screen_x, screen_y = 800, 800
-display_x, display_y = 80, 80
-
 class Game:
-    def __init__(self):
+    def __init__(self, env, model_name):
+        self.env = env
+        self.env.reset()
+
+        self.tile_size = 8
+        screen_size = 800
+        display_size = self.tile_size * self.env.world_size
+
         pygame.init()
 
         pygame.display.set_caption('RPG Farmer')
-        self.screen = pygame.display.set_mode((screen_x, screen_y))
-        self.display = pygame.Surface((display_x, display_y))
+        self.screen = pygame.display.set_mode((screen_size, screen_size))
+        self.display = pygame.Surface((display_size, display_size))
         self.clock = pygame.time.Clock()
 
         self.tick_speed = 0.2
         self.action_clock = WallClock(self.tick_speed)
 
-        self.tile_size = 8
         self.textures = {
             "grass":load_image("game_utils/assets/grass.png"),
             "bush":load_image("game_utils/assets/bush.png"),
@@ -41,11 +44,8 @@ class Game:
             "fish":Animation(load_images("game_utils/assets/fish_sprites"), anim_dur=0.4, max_loops=-1)
         }
 
-        self.env = Farm_Env(size=10)
-        self.env.reset()
-
         self.model = CNNPolicyNetwork(self.env.world_size, self.env.obs_channels, self.env.act_dim)
-        self.model.load_state_dict(torch.load("models/ppo_actor_600509.pth"))
+        self.model.load_state_dict(torch.load("models/" + model_name))
 
         self.player = Player(self, self.env.agent.tolist())
 
@@ -59,7 +59,7 @@ class Game:
             self.display.fill(0)
             dt = self.clock.tick(120) / 1000
 
-            self.render_bg(self, 10, 10)
+            self.render_bg(self, self.env.world_size, self.env.world_size)
 
             self.player.update(dt)
             self.player.render()
@@ -67,8 +67,6 @@ class Game:
             for tile in self.animated_tiles:
                 tile.update(dt)
                 tile.render()
-                #print(tile.anim.dt)
-                #print("tile: ", tile.anim.frame)
 
             if self.action_clock.update(dt):
                 #action = torch.argmax(self.model.forward(self.env.get_observation()))
@@ -122,8 +120,3 @@ class Game:
 
             idx = int(progress // boundaries)
             self.display.blit(self.textures["wheat_sprites"][idx], (pos[1] * self.tile_size, pos[0] * self.tile_size - self.tile_size/4))
-    
-if __name__ == "__main__":
-    Game().run()
-
-
