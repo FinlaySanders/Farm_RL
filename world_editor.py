@@ -29,15 +29,15 @@ large_obstacle_grid = np.array([
     [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
     [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
     [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
-    [W,W,0,0,0,0,0,B,0,0,0,0,0,0,0,W],
-    [W,W,W,W,W,W,W,B,W,W,W,W,W,0,0,W],
-    [W,W,W,W,W,W,W,B,W,W,W,W,W,W,0,W],
-    [W,W,W,0,0,0,0,B,0,0,0,0,W,W,W,W],
-    [W,W,0,0,0,0,0,0,0,0,0,0,W,W,W,W],
-    [W,0,0,0,0,W,0,0,0,0,0,0,0,W,W,W],
-    [W,0,0,0,0,W,0,0,0,0,W,W,0,0,0,W],
-    [W,0,0,0,0,W,W,0,0,0,W,W,0,0,0,W],
-    [W,0,0,0,W,W,W,0,0,0,0,0,0,0,0,W],
+    [W,W,W,0,0,W,W,W,0,0,0,B,0,0,0,W],
+    [W,W,W,W,W,W,W,W,W,W,W,B,W,W,W,W],
+    [W,W,W,W,W,W,W,W,W,W,W,B,W,W,W,W],
+    [W,0,0,W,W,W,W,W,W,W,W,B,W,W,W,W],
+    [W,0,0,0,0,0,0,0,0,0,0,B,0,0,0,W],
+    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
+    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
+    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
+    [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W],
     [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W],
 ])
 
@@ -54,11 +54,12 @@ class World_Generator:
     def generate_world(self, n_fields, field_size):
         self.world = np.array(obstacle_grid)
 
-        walkable = np.argwhere((self.world == EMPTY) | (self.world == BRIDGE) | (self.world == CROP) | (self.world == self.PLAYER))
-
+        # render features
         water = np.argwhere(self.world == WATER)
         bridge = np.argwhere(self.world == BRIDGE)
         fish = np.argwhere(self.world == FISH)
+
+        # training features
         obstacles = np.concatenate((water, fish))
 
         for _ in range(n_fields):
@@ -67,8 +68,10 @@ class World_Generator:
 
         agent = np.array(self.random_pos_at(self.EMPTY))
 
-        return {"crops":crops, "obstacles":obstacles, "agent":agent, "walkable": walkable, 
-                "render":{"water":water, "bridge":bridge, "fish":fish}}
+        return {
+                "train": {"crops":crops, "obstacles":obstacles, "agent":agent},
+                "render": {"water":water, "bridge":bridge, "fish":fish}
+                }
 
     def place_crops_bfs(self, start_pos, amount):
         queue = deque([start_pos])
