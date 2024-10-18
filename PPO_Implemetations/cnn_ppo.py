@@ -13,12 +13,13 @@ import torch.nn as nn
 from torch.optim import Adam
 from torch.distributions import Categorical
 
+import wandb
 
 class PPO:
     """
         This is the PPO class we will use as our model in main.py
     """
-    def __init__(self, policy_class, env, hyperparameters):
+    def __init__(self, policy_class, env, hyperparameters, wandb_log=False, save_models=False):
         """
             Initializes the PPO model, including hyperparameters.
 
@@ -30,6 +31,9 @@ class PPO:
             Returns:
                 None
         """
+
+        self.wanb_log = wandb_log
+        self.save_models = save_models
         
         # Initialize hyperparameters for training with PPO
         self._init_hyperparameters(hyperparameters)
@@ -186,8 +190,9 @@ class PPO:
             if t_since_save > self.save_freq:
                 print("saving")
                 t_since_save -= self.save_freq
-                torch.save(self.actor.state_dict(), f'./ppo_actor_{t_so_far}.pth')
-                torch.save(self.critic.state_dict(), f'./ppo_critic_{t_so_far}.pth')
+                if self.save_models:
+                    torch.save(self.actor.state_dict(), f'./ppo_actor_{t_so_far}.pth')
+                    torch.save(self.critic.state_dict(), f'./ppo_critic_{t_so_far}.pth')
 
     def calculate_gae(self, rewards, values, dones):
         batch_advantages = []  # List to store computed advantages for each timestep
@@ -375,7 +380,6 @@ class PPO:
         self.target_kl = 0.02                           # KL Divergence threshold
         self.max_grad_norm = 0.5                        # Gradient Clipping threshold
 
-
         # Miscellaneous parameters
         self.render = False                             # If we should render during rollout
         self.save_freq = 50000                          # How often we save in number of timesteps
@@ -422,9 +426,9 @@ class PPO:
         avg_actor_loss = np.mean([losses.float().mean() for losses in self.logger['actor_losses']])
 
         # Round decimal places for more aesthetic logging messages
-        avg_ep_lens = str(round(avg_ep_lens, 2))
-        avg_ep_rews = str(round(avg_ep_rews, 2))
-        avg_actor_loss = str(round(avg_actor_loss, 5))
+        avg_ep_lens = round(avg_ep_lens, 2)
+        avg_ep_rews = round(avg_ep_rews, 2)
+        avg_actor_loss = round(avg_actor_loss, 5)
 
         # Print logging statements
         print(flush=True)
@@ -442,3 +446,11 @@ class PPO:
         self.logger['batch_lens'] = []
         self.logger['batch_rews'] = []
         self.logger['actor_losses'] = []
+
+        if self.wanb_log:
+            wandb.log(
+            {
+                "Total Timesteps": t_so_far,
+                "Average Episodic Return": int(avg_ep_rews),
+            }
+        )

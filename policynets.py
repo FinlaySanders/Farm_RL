@@ -7,7 +7,7 @@ class CNNPolicyNetwork(nn.Module):
         super(CNNPolicyNetwork, self).__init__()
 
         """
-        BEWARE: pooling ignore pixels that dont fit !!! hence 5x5 pooled by 2x2 kernel with 2 stride -> 2x2
+        BEWARE: pooling ignores pixels that dont fit !!! hence 5x5 pooled by 2x2 kernel with 2 stride -> 2x2
         """
 
         self.conv1 = nn.Conv2d(obs_channels, out_channels=16, kernel_size=3, padding=1)

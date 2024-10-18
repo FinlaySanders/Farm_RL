@@ -11,7 +11,7 @@ class Farm_Env:
         self.act_dim = 5
 
     def reset(self): 
-        self.world = self.world_generator.generate_world(n_fields=3, field_size=5)
+        self.world = self.world_generator.generate_world(n_fields=3, field_size=3)
         self.render_info = self.world["render"]
 
         self.crops = np.array(self.world["train"]["crops"])
