@@ -22,25 +22,6 @@ obstacle_grid = np.array([
     [W,W,W,W,W,W,W,W,W,W],
 ])
 
-large_obstacle_grid = np.array([
-    [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W],
-    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
-    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
-    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
-    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
-    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
-    [W,W,W,0,0,W,W,W,0,0,0,B,0,0,0,W],
-    [W,W,W,W,W,W,W,W,W,W,W,B,W,W,W,W],
-    [W,W,W,W,W,W,W,W,W,W,W,B,W,W,W,W],
-    [W,0,0,W,W,W,W,W,W,W,W,B,W,W,W,W],
-    [W,0,0,0,0,0,0,0,0,0,0,B,0,0,0,W],
-    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
-    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
-    [W,0,0,0,0,0,0,0,0,0,0,0,0,0,0,W],
-    [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W],
-    [W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,W],
-])
-
 class World_Generator:
     def __init__(self, world_size):
         self.world_size = world_size
