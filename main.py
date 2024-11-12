@@ -31,9 +31,9 @@ world_generator = World_Generator(world_size)
 env = Farm_Env(world_size, world_generator)
 
 #ppo = PPO(CNNPolicyNetwork, env, hyperparameters, wandb_log=False, save_models=True)
-#ppo.learn(total_timesteps=1000000)
+#ppo.learn(total_timesteps=2000000)
 
-game = Game(env, "ppo_actor_300776.pth")
+game = Game(env, "ppo_actor_1103242.pth")
 game.run()
 
 

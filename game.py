@@ -48,7 +48,7 @@ class Game:
 
         self.model = CNNPolicyNetwork(self.env.world_size, self.env.obs_channels, self.env.act_dim)
         self.model.load_state_dict(torch.load("models/" + model_name))
-        self.model_paused = False
+        self.model_paused = True
 
         self.player = Player(self, self.env.agent.tolist())
 
@@ -138,15 +138,17 @@ class Game:
             else:
                 self.display.blit(game.textures["water"], (pos[1] * self.tile_size, pos[0] * self.tile_size))
         
-        for pos in self.env.crops.tolist():
-            self.display.blit(game.textures["tilled_dirt"], (pos[1] * self.tile_size, pos[0] * self.tile_size))
+        #for pos in self.env.crops.tolist():
+        #    self.display.blit(game.textures["tilled_dirt"], (pos[1] * self.tile_size, pos[0] * self.tile_size))
 
         for pos in self.env.render_info["bridge"].tolist():
             self.display.blit(game.textures["bridge"], (pos[1] * self.tile_size, pos[0] * self.tile_size))
 
-        for i in range(len(self.env.crops)):
-            pos = self.env.crops.tolist()[i]
-            progress = 1 - (self.env.managers[0].crop_growth_steps_remaining[i] / self.env.managers[0].crop_growth_steps)
+        crop_manager = self.env.crop_manager
+        for pos in crop_manager.tilled.tolist():
+            self.display.blit(game.textures["tilled_dirt"], (pos[1] * self.tile_size, pos[0] * self.tile_size))
+        for i, pos in enumerate(crop_manager.crops.tolist()):
+            progress = 1 - (crop_manager.crop_growth_steps_remaining[i] / crop_manager.crop_growth_steps)
             boundaries = 1 / len(self.textures["wheat_sprites"])
 
             idx = int(progress // boundaries)

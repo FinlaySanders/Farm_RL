@@ -7,7 +7,7 @@ class Farm_Env:
     def __init__(self, world_size, world_generator):
         self.world_size = world_size
         self.world_generator = world_generator
-        self.obs_channels = 4
+        self.obs_channels = 5
         self.act_dim = 6
 
     def reset(self): 
@@ -17,12 +17,10 @@ class Farm_Env:
         self.crops = np.array(self.world["train"]["crops"])
         self.agent = np.array(self.world["train"]["agent"])
         self.obstacles = np.array(self.world["train"]["obstacles"])
+        self.tool_poses = np.array(self.world["train"]["tools"])
 
-        self.managers = [Crop_Manager(self.crops)]
-
-        self.tools = [Hoe(self.managers[0])]
-        self.tool_poses = np.array([[2,2]])
-
+        self.crop_manager = Crop_Manager(self.crops)
+        self.tools = [Hoe(self.crop_manager), Shovel(self.crop_manager)]
         self.tool_manager = Tool_Manager(self.tools, self.tool_poses)
 
         return self.get_observation(), {}
@@ -33,8 +31,7 @@ class Farm_Env:
         terminated = False
         info = {}
 
-        for manager in self.managers:
-            manager.step()
+        self.crop_manager.step()
 
         if a < 4:     
             overlap = np.all(self.obstacles == self.agent + self.dirs[a], axis=1)
@@ -57,14 +54,11 @@ class Farm_Env:
 
     def get_observation(self):
         observation = np.zeros((self.obs_channels, self.world_size, self.world_size), dtype=np.float32)
-        
-        observation[0, self.agent[0], self.agent[1]] = 1.0
-        observation[1, self.crops[:, 0], self.crops[:, 1]] = self.managers[0].get_observation()
-        observation[2, self.obstacles[:, 0], self.obstacles[:, 1]] = 1.0
 
-        for i, pos in enumerate(self.tool_manager.tool_poses):
-            if i != self.tool_manager.active_tool:
-                observation[3, pos[0], pos[1]] = 1.0
+        observation[0, self.agent[0], self.agent[1]] = 1.0
+
+        self.tool_manager.get_observation(observation[1:3])
+        self.crop_manager.get_observation(observation[3:5])
 
         return torch.from_numpy(observation)
 
@@ -80,6 +74,28 @@ class Farm_Env:
 bug that when we c an item to pick it up we cannot c again to put it down in the same spot
 """    
 
+class Shovel:
+    def __init__(self, manager):
+        self.manager = manager
+
+    def interact(self, agent):
+        terminated = False
+        reward = 0
+
+        if len(self.manager.tilled) > 0:
+            overlap = (np.all((self.manager.tilled == agent), axis=1))
+            if not np.any(overlap):
+                reward += 0.5
+                self.manager.tilled = np.vstack((self.manager.tilled, agent))
+                self.manager.crops = np.vstack((self.manager.crops, agent))
+                self.manager.crop_growth_steps_remaining = np.append(self.manager.crop_growth_steps_remaining, self.manager.crop_growth_steps)
+        else:
+            self.manager.tilled = np.expand_dims(np.array(agent), axis=0)
+            self.manager.crops = np.expand_dims(np.array(agent), axis=0)
+            self.manager.crop_growth_steps_remaining = np.array([self.manager.crop_growth_steps])
+        
+        return reward, terminated
+
 class Hoe:
     def __init__(self, manager):
         self.manager = manager
@@ -89,15 +105,16 @@ class Hoe:
         reward = 0
         harvestable_mask = self.manager.crop_growth_steps_remaining == 0
 
-        overlap = (np.all((self.manager.crops == agent), axis=1)) & harvestable_mask
-        if np.any(overlap):
-            reward += 1
-                
-            self.manager.crop_growth_steps_remaining[overlap] = self.manager.crop_growth_steps
+        if len(self.manager.crops) > 0:
+            overlap = (np.all((self.manager.crops == agent), axis=1)) & harvestable_mask
+            if np.any(overlap):
+                reward += 1
+                    
+                self.manager.crop_growth_steps_remaining[overlap] = self.manager.crop_growth_steps
 
-            self.manager.n_wp_left -= 1
-            if self.manager.n_wp_left == 0:
-                terminated = True
+                self.manager.n_wp_left -= 1
+                if self.manager.n_wp_left == 0:
+                    terminated = True
         
         return reward, terminated
 
@@ -127,10 +144,17 @@ class Tool_Manager:
             self.tool_poses[self.active_tool] = [-1,-1]
         else:
             self.active_tool = None
+    
+    def get_observation(self, observation):
+        for i, pos in enumerate(self.tool_poses):
+            if pos[0] > 0:
+                observation[i, pos[0], pos[1]] = 1.0
 
 class Crop_Manager:
     def __init__(self, crops):
-        self.crops = crops
+        # crops/tilled separated as in future would like to implement 'seed bags' etc
+        self.crops = np.array([])
+        self.tilled = np.array([])
         self.n_wp_left = 20
         self.crop_growth_steps = 30
         self.crop_growth_steps_remaining = np.zeros(len(crops), dtype=int)
@@ -138,5 +162,8 @@ class Crop_Manager:
     def step(self):
         self.crop_growth_steps_remaining = np.maximum(0, self.crop_growth_steps_remaining - 1)
     
-    def get_observation(self):
-        return 1 - (self.crop_growth_steps_remaining / self.crop_growth_steps)
+    def get_observation(self, observation):
+        if len(self.tilled) > 0:
+            observation[0, self.tilled[:, 0], self.tilled[:, 1]] = 1.0
+        if len(self.crops) > 0:
+            observation[1, self.crops[:, 0], self.crops[:, 1]] = 1 - (self.crop_growth_steps_remaining / self.crop_growth_steps)

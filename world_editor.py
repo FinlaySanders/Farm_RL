@@ -48,9 +48,14 @@ class World_Generator:
         crops = np.argwhere(self.world == CROP)
 
         agent = np.array(self.random_pos_at(self.EMPTY))
+        rand1 = self.random_pos_at(self.EMPTY)
+        self.world[rand1] = 333
+        rand2 = self.random_pos_at(self.EMPTY)
+        self.world[rand2] = 333
+        tools = np.array([rand1, rand2])
 
         return {
-                "train": {"crops":crops, "obstacles":obstacles, "agent":agent},
+                "train": {"crops":crops, "obstacles":obstacles, "agent":agent, "tools":tools},
                 "render": {"water":water, "bridge":bridge, "fish":fish}
                 }
 
@@ -147,8 +152,8 @@ class World_Generator:
 
 
 if __name__ == "__main__":
-    gen = World_Generator(size=16)
-    world = gen.generate_world(n_fields=10, field_size=5)
+    gen = World_Generator(10)
+    world = gen.generate_world(n_fields=3, field_size=3)
     print(world)
     print(gen.world)
     print(gen.world.shape)
