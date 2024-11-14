@@ -2,5 +2,4 @@
 
 Reinforcement learning project that creates and solves combinatorial optimisation problems in the form of farming games.
 
-https://github.com/user-attachments/assets/fd43bbfa-15d7-4c04-ac08-52d4755876c5
-
+https://github.com/user-attachments/assets/e0783d4d-0514-42c5-a3a3-0d44ae4cb367
