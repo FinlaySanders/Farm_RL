@@ -150,10 +150,11 @@ class Game:
         for i, pos in enumerate(crop_manager.crops.tolist()):
             progress = 1 - (crop_manager.crop_growth_steps_remaining[i] / crop_manager.crop_growth_steps)
             boundaries = 1 / len(self.textures["wheat_sprites"])
-
             idx = int(progress // boundaries)
             self.display.blit(self.textures["wheat_sprites"][idx], (pos[1] * self.tile_size, pos[0] * self.tile_size - self.tile_size/4))
         
+        
+
         for i, pos in enumerate(self.env.tool_manager.tool_poses):
             if i != self.env.tool_manager.active_tool:
                 self.display.blit(self.textures[f"shovel{i+1}"], (pos[1] * self.tile_size, pos[0] * self.tile_size - self.tile_size/4))

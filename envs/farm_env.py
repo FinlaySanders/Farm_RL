@@ -19,9 +19,11 @@ class Farm_Env:
         self.obstacles = np.array(self.world["train"]["obstacles"])
         self.tool_poses = np.array(self.world["train"]["tools"])
 
-        self.crop_manager = Crop_Manager(self.crops)
-        self.tools = [Hoe(self.crop_manager), Shovel(self.crop_manager)]
-        self.tool_manager = Tool_Manager(self.tools, self.tool_poses)
+        self.crop_manager = Crop_Manager([])
+        self.tool_manager = Tool_Manager([
+            Hoe(self.crop_manager), 
+            Shovel(self.crop_manager)
+        ], self.tool_poses)
 
         return self.get_observation(), {}
 
@@ -147,14 +149,14 @@ class Tool_Manager:
     
     def get_observation(self, observation):
         for i, pos in enumerate(self.tool_poses):
-            if pos[0] > 0:
+            if i != self.active_tool:
                 observation[i, pos[0], pos[1]] = 1.0
 
 class Crop_Manager:
     def __init__(self, crops):
         # crops/tilled separated as in future would like to implement 'seed bags' etc
-        self.crops = np.array([])
-        self.tilled = np.array([])
+        self.crops = np.array(crops)
+        self.tilled = np.array(crops)
         self.n_wp_left = 20
         self.crop_growth_steps = 30
         self.crop_growth_steps_remaining = np.zeros(len(crops), dtype=int)
