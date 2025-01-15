@@ -1,4 +1,4 @@
-from game_utils.scripts.utils import Animation, Lerper, load_images
+from render.scripts.utils import Animation, Lerper, load_images
 
 class Animated_Tile:
     def __init__(self, game, animation, pos):
@@ -21,10 +21,10 @@ class Player:
         self.target_pos = pos
 
         self.anims = {
-            "up":Animation(load_images("game_utils/assets/farmer_sprites/up"), anim_dur=0.2, max_loops=1),
-            "down":Animation(load_images("game_utils/assets/farmer_sprites/down"), anim_dur=0.2, max_loops=1),
-            "left":Animation(load_images("game_utils/assets/farmer_sprites/left"), anim_dur=0.2, max_loops=1),
-            "right":Animation(load_images("game_utils/assets/farmer_sprites/right"), anim_dur=0.2, max_loops=1),
+            "up":Animation(load_images("render/assets/farmer_sprites/up"), anim_dur=0.2, max_loops=1),
+            "down":Animation(load_images("render/assets/farmer_sprites/down"), anim_dur=0.2, max_loops=1),
+            "left":Animation(load_images("render/assets/farmer_sprites/left"), anim_dur=0.2, max_loops=1),
+            "right":Animation(load_images("render/assets/farmer_sprites/right"), anim_dur=0.2, max_loops=1),
         }
         self.current_anim = self.anims["down"].copy()
 
