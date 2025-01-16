@@ -86,14 +86,8 @@ class FarmEnv(gym.Env):
         pass
 
 if __name__ == "__main__":
-    env = RPGEnv()
+    env = FarmEnv()
     env.reset()
     x = env.get_observation()
     print(x)
     print(gym.spaces.unflatten(env.shaped_observation_space, x))
-
-    #y = spaces.flatten(env.observation_space, x)
-    #z = spaces.unflatten(env.observation_space, x)
-
-    #print(x)
-    #print(z)

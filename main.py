@@ -40,7 +40,6 @@ class Render:
             "tilled_dirt":load_image("render/assets/tilled_dirt.png"),
             "shovel1":load_image("render/assets/shovel.png"),
             "shovel2":load_image("render/assets/shovel2.png"),
-
             "wheat_sprites":load_images("render/assets/wheat_sprites"),
         }
 
@@ -68,55 +67,24 @@ class Render:
             self.player.update(dt)
             self.player.render()
 
-            if self.action_clock.update(dt) and not self.model_paused:
+            if self.action_clock.update(dt):
                 obs = torch.tensor([self.env.get_observation()], dtype=torch.float32)
-                print(obs)
                 action = self.choose_action(obs, deterministic=True)
                 
                 self.env.step(action)
-
-                if action < 4:
-                    new_pos = self.env.agent
-
-                    if new_pos != None:
-                        self.player.pos = self.player.target_pos
-                        self.player.move_to(new_pos, self.tick_speed)
             
-            for event in pygame.event.get():
-                if event.type == pygame.KEYDOWN:
-                    action = -1
-
-                    if event.key == pygame.K_UP:
-                        action = 2
-                    if event.key == pygame.K_LEFT:
-                        action = 3
-                    if event.key == pygame.K_DOWN:
-                        action = 1
-                    if event.key == pygame.K_RIGHT:
-                        action = 0
-                    if event.key == pygame.K_SPACE:
-                        action = 4
-                    if event.key == pygame.K_c:
-                        action = 5
-                    if event.key == pygame.K_p:
-                        self.model_paused = not self.model_paused
-
-                    if action != -1:
-                        self.env.step(action)
-                        if action < 4:
-                            new_pos = self.env.agent
-
-                            if new_pos != None:
-                                self.player.pos = self.player.target_pos
-                                self.player.move_to(new_pos, self.tick_speed)
-     
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    exit()
+                if action < 4:
+                    self.player.pos = self.player.target_pos
+                    self.player.move_to(self.env.agent, self.tick_speed)
 
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
             pygame.display.update()
-        
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+    
     def choose_action(self, obs, deterministic=True):
         obs = self.agent.preprocess(obs)
         hidden, self.lstm_state = self.agent.get_states(obs, self.lstm_state, torch.tensor([0]))
@@ -133,11 +101,11 @@ class Render:
                 self.display.blit(self.textures["grass"], (i * self.tile_size, j * self.tile_size))
         
         for pos in render_info["crops"]:
-            self.display.blit(self.textures["tilled_dirt"], (pos[1] * self.tile_size, pos[0] * self.tile_size))
-        
             progress = 1 - (self.env.crops[pos] / self.env.crop_time)
-            boundaries = 1 / len(self.textures["wheat_sprites"])
+            boundaries = 1 / (len(self.textures["wheat_sprites"]) - 1)
             idx = int(progress // boundaries)
+
+            self.display.blit(self.textures["tilled_dirt"], (pos[1] * self.tile_size, pos[0] * self.tile_size))
             self.display.blit(self.textures["wheat_sprites"][idx], (pos[1] * self.tile_size, pos[0] * self.tile_size - self.tile_size/4))
     
     def render_agent_view(self):
@@ -150,16 +118,11 @@ class Render:
         rect_width = (view_radius * 2 + 1) * self.tile_size
         rect_height = (view_radius * 2 + 1) * self.tile_size
 
-        pygame.draw.rect(
-            self.display,
-            (100, 100, 100),
-            pygame.Rect(rect_x, rect_y, rect_width, rect_height),
-            1 
-        )
-
+        pygame.draw.rect(self.display, (100, 100, 100), pygame.Rect(rect_x, rect_y, rect_width, rect_height), width=1)
+    
 if __name__ == "__main__":
-    from farm.env import RPGEnv
+    from farm.env import FarmEnv
 
-    env = RPGEnv()
+    env = FarmEnv()
     ren = Render(env=env, model_name="models/example.pth")
     ren.run()

@@ -413,7 +413,7 @@ if __name__ == "__main__":
         writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
 
         if iteration % 100 == 0:
-            torch.save(agent.state_dict(), f'./ppo_{global_step}.pth')
+            torch.save(agent.state_dict(), f'./models/ppo_{global_step}.pth')
 
     envs.close()
     writer.close()
