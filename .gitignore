@@ -3,4 +3,4 @@ venv/
 **/__pycache__
 wandb/
 runs/
-.DS_Store
+**/.DS_Store
