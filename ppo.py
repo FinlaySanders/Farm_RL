@@ -10,8 +10,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import tyro
 from torch.distributions.categorical import Categorical
+import tyro
 from torch.utils.tensorboard import SummaryWriter
 
 @dataclass
@@ -34,8 +34,6 @@ class Args:
     """whether to capture videos of the agent performances (check out `videos` folder)"""
 
     # Algorithm specific arguments
-    env_id: str = "BreakoutNoFrameskip-v4"
-    """the id of the environment"""
     total_timesteps: int = 10000000
     """total timesteps of the experiments"""
     learning_rate: float = 2.5e-4
@@ -77,7 +75,6 @@ class Args:
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
 
-
 def make_env(env_id, idx, capture_video, run_name):
     def thunk():
         if capture_video and idx == 0:
@@ -90,66 +87,14 @@ def make_env(env_id, idx, capture_video, run_name):
 
     return thunk
 
-
-def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
-    torch.nn.init.orthogonal_(layer.weight, std)
-    torch.nn.init.constant_(layer.bias, bias_const)
-    return layer
-
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-
-class TripletAttention(nn.Module):
-    """
-    Simple attention over triplets of size 3.
-    For an input (B, 3*n), we:
-      1) Reshape -> (B, n, 3)
-      2) Compute a score per triplet -> (B, n, 1)
-      3) Softmax across n -> (B, n)
-      4) Weighted sum of triplets -> (B, 3)
-    """
-    def __init__(self, input_dim=3, hidden_dim=64):
-        super().__init__()
-        self.attention_fc = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, 1),
-        )
-
-    def forward(self, x):
-        """
-        x: (B, 3*n)
-        Returns: (B, 3) - the attention-pooled result
-        """
-        B, total_dim = x.shape
-        n = total_dim // 3
-        
-        # 1) Reshape to (B, n, 3)
-        x = x.view(B, n, 3)
-
-        # 2) Compute a score for each token (B, n, 1)
-        scores = self.attention_fc(x)  # -> (B, n, 1)
-        scores = scores.squeeze(-1)    # -> (B, n)
-
-        # 3) Convert scores to attention weights
-        weights = F.softmax(scores, dim=-1)  # -> (B, n)
-
-        # 4) Weighted sum of triplets
-        #    - expand weights to (B, n, 1)
-        weights = weights.unsqueeze(-1)   # (B, n, 1)
-        #    - multiply and sum along n
-        out = (weights * x).sum(dim=1)    # -> (B, 3)
-
-        return out
-
-
 class Agent(nn.Module):
     def __init__(self, envs):
         super().__init__()
         self.triplet_attention = TripletAttention()
+        self.simple_cnn = SimpleCNN()
+
         self.network = nn.Sequential(
-            layer_init(nn.Linear(5, 64)),
+            layer_init(nn.Linear(9, 64)),
             nn.ReLU(),
             layer_init(nn.Linear(64, 512)),
             nn.ReLU(),
@@ -166,9 +111,9 @@ class Agent(nn.Module):
 
     def preprocess(self, x):
         agent = x[:, :2]
-        crops = self.triplet_attention(x[:, 2:])
-
-        return torch.concatenate((agent, crops), dim=1)            
+        crops = self.triplet_attention(x[:, 2:32])
+        terrain = self.simple_cnn(x[:, 32:])
+        return torch.concatenate((agent, crops, terrain), dim=1)     
 
     def get_states(self, x, lstm_state, done):
         hidden = self.network(x)
@@ -203,13 +148,64 @@ class Agent(nn.Module):
             action = probs.sample()
         return action, probs.log_prob(action), probs.entropy(), self.critic(hidden), lstm_state
 
+def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
+    torch.nn.init.orthogonal_(layer.weight, std)
+    torch.nn.init.constant_(layer.bias, bias_const)
+    return layer
+
+class TripletAttention(nn.Module):
+    def __init__(self, input_dim=3, hidden_dim=64):
+        super().__init__()
+        self.attention_fc = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1),
+        )
+
+    def forward(self, x):
+        B, total_dim = x.shape
+        n = total_dim // 3
+        
+        x = x.view(B, n, 3)
+
+        scores = self.attention_fc(x)
+        scores = scores.squeeze(-1)
+
+        weights = F.softmax(scores, dim=-1)
+
+        weights = weights.unsqueeze(-1)
+        out = (weights * x).sum(dim=1)
+
+        return out
+
+class SimpleCNN(nn.Module):
+    def __init__(self, input_channels=1, num_classes=4):
+        super().__init__()
+        
+        self.conv1 = nn.Conv2d(input_channels, 8, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(8, 16, kernel_size=3, padding=1)
+    
+        self.fc1 = nn.Linear(16 * 5 * 5, 64)
+        self.fc2 = nn.Linear(64, num_classes)
+
+    def forward(self, x):
+        B, _ = x.shape
+        x = x.view(B, 1, 5, 5)
+
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        
+        return x
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
-    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
+    run_name = f"{args.exp_name}__{args.seed}__{int(time.time())}"
     if args.track:
         import wandb
 
@@ -238,14 +234,13 @@ if __name__ == "__main__":
 
     # env setup
     gym.register(
-        id="FarmEnv-v0",                            # Must be a unique string
-        entry_point="env:FarmEnv",            # Path to your env’s class
+        id="FarmEnv-v0",                                # Must be a unique string
+        entry_point=f"farm.env:FarmEnv",                # Path to your env’s class
     )
+
     envs = gym.vector.SyncVectorEnv(
-        [make_env(args.env_id, i, args.capture_video, run_name) for i in range(args.num_envs)],
+        [make_env("FarmEnv-v0", i, args.capture_video, run_name) for i in range(args.num_envs)],
     )
-    print(envs)
-    print(envs.envs[0].action_space)
     assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
 
     agent = Agent(envs).to(device)
