@@ -22,7 +22,9 @@ uv run ppo.py --track --wandb-project-name Farm_RL
 ```
 
 To visualise a model in 'models':
+```bash
 uv run show.py --model example.pth
+```
 
 ## Demo V1
 
